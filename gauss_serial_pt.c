@@ -200,6 +200,11 @@ int main(int argc, char **argv)
  * defined in the beginning of this code.  X[] is initialized to zeros.
  */
 
+
+//this method is the beggining of the second for loop
+//as gaussin elimination is n^3 , 
+// the second inner loop is still independent and can be parallalised
+//this method will be used by all the threads created for the calculation
 void *gauss_cal(void * param){
      int norm = *((int *) param);
      float multiplier;
@@ -214,6 +219,11 @@ void *gauss_cal(void * param){
      pthread_exit(0);
  }
 
+
+//this method generates pthreads inside of the outermost lopp
+//and then each of the threads created from the outer for loop will 
+//execute the gauss_cal() method which will basically performs gaussion elimination.
+//without pivoting.
 void gauss() {
   int norm, row, col;  /* Normalization row, and zeroing
 			* element row and col */
@@ -236,8 +246,6 @@ void gauss() {
   /* (Diagonal elements are not normalized to 1.  This is treated in back
    * substitution.)
    */
-
-
   /* Back substitution */
   for (row = N - 1; row >= 0; row--) {
     X[row] = B[row];

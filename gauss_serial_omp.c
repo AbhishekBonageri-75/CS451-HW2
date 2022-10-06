@@ -200,6 +200,9 @@ void gauss() {
 
   for (norm = 0; norm < N - 1; norm++) {
     // #pragma omp parallel default(none) num_threads(Nthread) shared(N,X,y,norm) private(multiplier,row,col)
+    //the following openmp fommand simply creates multiple threads and runs the independent 
+    //second loot seperately from within different threads
+    //which parallalises the process and increases the speed.
     #pragma omp parallel for shared(A, B) private(multiplier,row,col)
     for (row = norm + 1; row < N; row++) {
       multiplier = A[row][norm] / A[norm][norm];
