@@ -26,7 +26,7 @@ volatile float A[MAXN][MAXN], B[MAXN], X[MAXN];
 
 /* junk */
 // #define randm() 4|2[uid]&3
-
+void *gauss_cal(void * param);
 /* Prototype */
 void gauss(); /* The function you will provide.
                * It is this routine that is timed.
@@ -135,6 +135,7 @@ void print_X()
 
 int main(int argc, char **argv)
 {
+    
     /* Timing variables */
     struct timeval etstart, etstop; /* Elapsed times using gettimeofday() */
     struct timezone tzdummy;
@@ -198,39 +199,52 @@ int main(int argc, char **argv)
 /* Provided global variables are MAXN, N, A[][], B[], and X[],
  * defined in the beginning of this code.  X[] is initialized to zeros.
  */
-void gauss()
-{
-    int norm, row, col; /* Normalization row, and zeroing
-                         * element row and col */
-    float multiplier;
 
-    printf("Computing Serially.\n");
+void *gauss_cal(void * param){
+     int norm = *((int *) param);
+     float multiplier;
+     int row, col;
+     for (row = norm + 1; row < N; row++) {
+         multiplier = A[row][norm] / A[norm][norm];
+         for (col = norm; col < N; col++) {
+             A[row][col] =A[row][col]- A[norm][col] * multiplier;
+         }
+         B[row] =B[row]- B[norm] * multiplier;
+     }
+     pthread_exit(0);
+ }
 
-    /* Gaussian elimination */
-    for (norm = 0; norm < N - 1; norm++)
-    {
-        for (row = norm + 1; row < N; row++)
-        {
-            multiplier = A[row][norm] / A[norm][norm];
-            for (col = norm; col < N; col++)
-            {
-                A[row][col] -= A[norm][col] * multiplier;
-            }
-            B[row] -= B[norm] * multiplier;
-        }
+void gauss() {
+  int norm, row, col;  /* Normalization row, and zeroing
+			* element row and col */
+  float multiplier;
+
+  pthread_t thread[N];
+
+  printf("Computing Serially.\n");
+
+  /* Gaussian elimination */
+  for (norm = 0; norm < N - 1; norm++) {
+      int *param = malloc(sizeof(*param));
+      *param = norm;
+      pthread_create(&thread[norm], NULL, gauss_cal, param);
+  }
+  for (norm = 0; norm < N - 1; norm++) {
+      pthread_join(thread[norm], NULL);
+  }
+
+  /* (Diagonal elements are not normalized to 1.  This is treated in back
+   * substitution.)
+   */
+
+
+  /* Back substitution */
+  for (row = N - 1; row >= 0; row--) {
+    X[row] = B[row];
+    for (col = N-1; col > row; col--) {
+      X[row] -= A[row][col] * X[col];
     }
-    /* (Diagonal elements are not normalized to 1.  This is treated in back
-     * substitution.)
-     */
-
-    /* Back substitution */
-    for (row = N - 1; row >= 0; row--)
-    {
-        X[row] = B[row];
-        for (col = N - 1; col > row; col--)
-        {
-            X[row] -= A[row][col] * X[col];
-        }
-        X[row] /= A[row][row];
-    }
+    X[row] /= A[row][row];
+  }
 }
+
